@@ -29,6 +29,8 @@ const MAX_CUSTOM_DEGREE: usize = 32;
 const HIGH_DEGREE_TEST_NV: usize = 15;
 
 fn main() -> Result<(), HyperPlonkErrors> {
+    env_logger::init();
+    memory_traces();
     let thread = rayon::current_num_threads();
     println!("start benchmark with #{} threads", thread);
     let mut rng = test_rng();
@@ -186,4 +188,28 @@ fn bench_mock_circuit_zkp_helper(
         start.elapsed().as_micros() / repetition as u128
     );
     Ok(())
+}
+
+pub fn memory_traces() {
+    #[cfg(all(feature = "print-trace", target_os = "linux"))]
+    {
+        // virtual memory page size can be obtained also with:
+        // $ getconf PAGE_SIZE    # alternatively, PAGESIZE
+        let pagesize = unsafe { libc::sysconf(libc::_SC_PAGESIZE) as usize };
+        let mut previous_memory = 0usize;
+        ark_std::thread::spawn(move || loop {
+            // obtain the total virtual memory size, in pages
+            // and convert it to bytes
+            let pages_used = procinfo::pid::statm_self().unwrap().data;
+            let memory_used = pagesize * pages_used;
+            // if the memory changed of more than 10kibibytes from last clock tick,
+            // then log it.
+            if (memory_used - previous_memory) > 10 << 10 {
+                log::debug!("memory (statm.data): {}B", memory_used);
+                previous_memory = memory_used;
+            }
+            // sleep for 10 seconds
+            ark_std::thread::sleep(std::time::Duration::from_secs(10))
+        });
+    }
 }

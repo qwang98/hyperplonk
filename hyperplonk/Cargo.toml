@@ -16,6 +16,10 @@ rayon = { version = "1.5.2", default-features = false, optional = true }
 subroutines = { path = "../subroutines" }
 transcript = { path = "../transcript" }
 util = { path = "../util" }
+log = "0.4.16"
+env_logger = "0.8.3" # this is a dev dependency really
+# libc = "0.2"
+# procinfo = "0.4"
 
 [dev-dependencies]
 ark-bls12-381 = { version = "0.4.0", default-features = false, features = [ "curve" ] }
